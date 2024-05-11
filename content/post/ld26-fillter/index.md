@@ -1,12 +1,4 @@
----
-title: Ludum Dare 26 - Filler
-date: 2013-04-28
-tags:
- - coding
- - gamejam
-cover:
-  image: cover.png
----
+
 
 This weekend I took part in the [Ludum Dare 26 Competition](http://www.ludumdare.com/compo/), where the
 theme was "Minimalism". My entry is **Filler**.
