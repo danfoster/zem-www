@@ -8,6 +8,10 @@ theme:
 # selfHosted: true
 # pygmentsStyle: "trac"
 enableEmoji: true
+module:
+  imports:
+    - path: github.com/martignoni/hugo-notice
+    - path: github.com/adityatelange/hugo-PaperMod
 params:
   env: production 
   ShowCodeCopyButtons: true

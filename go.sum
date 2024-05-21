@@ -2,5 +2,7 @@ github.com/adityatelange/hugo-PaperMod v0.0.0-20240420132049-175059921fe1 h1:pSD
 github.com/adityatelange/hugo-PaperMod v0.0.0-20240420132049-175059921fe1/go.mod h1:HCHxNMKYdGafUYjVV3ICiAqznZK2yH0iI53jqcDFDdQ=
 github.com/halogenica/beautifulhugo v0.0.0-20240227170426-6b650c38c80b h1:8ILhWhjb9EsxJn+YOZnF101FDZS0sBqKWfcmzJoUxmg=
 github.com/halogenica/beautifulhugo v0.0.0-20240227170426-6b650c38c80b/go.mod h1:4dwHt6njigk+fr9W3Bg+OflL4LKzkjbXAULXvr3mYLs=
+github.com/martignoni/hugo-notice v0.0.0-20240317181534-be025da2580d h1:YmphoiBKQ7svpO338vXw8NH+Qg20Yu4JsmeHV9f2E5s=
+github.com/martignoni/hugo-notice v0.0.0-20240317181534-be025da2580d/go.mod h1:MIQPOMgEcbyRC0gNLzQFSgrS+wIy3RuQ/HbaZYtTOKU=
 github.com/nodejh/hugo-theme-mini v0.0.0-20240322021354-34417888405c h1:WUFnrYHzZk6QLla2BgFvySeYORf5nf0SUzcdIANHadU=
 github.com/nodejh/hugo-theme-mini v0.0.0-20240322021354-34417888405c/go.mod h1:+Rl6qKesH3DeBOjXcmPXB1L/LwD3RqXzopTzon/jv5Q=
