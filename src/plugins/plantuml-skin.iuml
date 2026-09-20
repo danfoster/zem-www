@@ -3,7 +3,7 @@ skinparam shadowing false
 skinparam defaultFontName Helvetica
 skinparam defaultFontSize 13
 skinparam defaultFontColor #232323
-skinparam roundCorner 8
+skinparam roundCorner 0
 skinparam ArrowColor #444444
 skinparam ArrowFontColor #232323
 skinparam NoteBackgroundColor #FFF8DC

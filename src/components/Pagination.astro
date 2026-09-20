@@ -6,8 +6,8 @@ const href = (n: number) => (n === 1 ? base : `${base}page/${n}/`);
 ---
 {total > 1 && (
   <nav class="pagination" aria-label="Pagination">
-    {number > 1 ? <a href={href(number - 1)} rel="prev">&laquo; Newer</a> : <span />}
-    <span class="meta">Page {number} of {total}</span>
-    {number < total ? <a href={href(number + 1)} rel="next">Older &raquo;</a> : <span />}
+    {number > 1 ? <a href={href(number - 1)} rel="prev">← Newer</a> : <span />}
+    <span class="status">{number} / {total}</span>
+    {number < total ? <a href={href(number + 1)} rel="next">Older →</a> : <span />}
   </nav>
 )}

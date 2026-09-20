@@ -8,7 +8,7 @@ interface Props { name: string; slug: string; posts: Post[]; number: number; tot
 const { name, slug, posts, number, total } = Astro.props;
 ---
 <BaseLayout title={number > 1 ? `${name}, page ${number}` : name}>
-  <h1 class="page-title">Tagged: {name}</h1>
+  <h1 class="page-title">#{slug}</h1>
   <PostList posts={posts} />
   <Pagination number={number} total={total} base={`/tags/${slug}/`} />
 </BaseLayout>

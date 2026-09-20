@@ -4,16 +4,16 @@ import PostList from './PostList.astro';
 import Pagination from './Pagination.astro';
 import type { Post } from '../lib/posts';
 
-interface Props { posts: Post[]; number: number; total: number }
-const { posts, number, total } = Astro.props;
+interface Props { posts: Post[]; number: number; total: number; count: number }
+const { posts, number, total, count } = Astro.props;
 ---
 <BaseLayout title={number > 1 ? `Page ${number}` : undefined}>
-  {number === 1 && (
-    <section class="intro">
-      <h1>Hi there 👋</h1>
-      <p>My name is Dan Foster and this is my own corner of the Internet.</p>
-    </section>
-  )}
-  <PostList posts={posts} />
-  <Pagination number={number} total={total} base="/" />
+  <div class="home-list">
+    <header class="section-head">
+      <h2><span class="idx">01</span>Latest writing</h2>
+      <span class="count">{count} posts</span>
+    </header>
+    <PostList posts={posts} />
+    <Pagination number={number} total={total} base="/" />
+  </div>
 </BaseLayout>

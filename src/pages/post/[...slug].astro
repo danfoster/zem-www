@@ -9,27 +9,38 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
+const toc = headings.filter((h) => h.depth <= 3);
 const tags = postTags(post);
 ---
 <BaseLayout title={post.data.title} description={post.data.description} type="article">
   <article data-pagefind-body>
     <header class="post-header">
-      <h1>{post.data.title}</h1>
       <div class="meta">
         <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
+        <ul class="taglinks">
+          {tags.map((t) => <li><a href={`/tags/${t.slug}/`}>{t.slug}</a></li>)}
+        </ul>
       </div>
-      <ul class="tag-list">
-        {tags.map((t) => <li><a href={`/tags/${t.slug}/`}>{t.name}</a></li>)}
-      </ul>
+      <h1>{post.data.title}</h1>
     </header>
     {post.data.cover && (
       <figure class="cover">
         <Image src={post.data.cover.image} alt="" widths={[480, 720, 1080]} sizes="(min-width: 46rem) 44rem, 100vw" />
       </figure>
     )}
-    <div class="prose">
-      <Content />
+    <div class="layout">
+      <div class="prose">
+        <Content />
+      </div>
+      {toc.length >= 3 && (
+        <aside class="toc" aria-label="On this page" data-pagefind-ignore>
+          <div class="toc-label">On this page</div>
+          <ol>
+            {toc.map((h) => <li class={`d${h.depth}`}><a href={`#${h.slug}`}>{h.text}</a></li>)}
+          </ol>
+        </aside>
+      )}
     </div>
   </article>
 </BaseLayout>

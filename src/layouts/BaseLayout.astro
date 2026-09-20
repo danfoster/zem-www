@@ -9,7 +9,7 @@ interface Props {
   type?: 'website' | 'article';
 }
 
-const { title, description = 'Dan Foster: sysadmin notes, projects and things I make.', type = 'website' } = Astro.props;
+const { title, description = 'Writing and projects by Dan Foster.', type = 'website' } = Astro.props;
 const fullTitle = title ? `${title} | Zem` : 'Zem';
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
@@ -20,6 +20,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="canonical" href={canonical} />
     <link rel="alternate" type="application/rss+xml" title="Zem" href="/index.xml" />
     <meta property="og:title" content={fullTitle} />
@@ -27,11 +28,19 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:type" content={type} />
     <meta property="og:url" content={canonical} />
     <script is:inline>
-      // Apply a saved theme before first paint to avoid a flash.
-      try {
-        const t = localStorage.getItem('theme');
-        if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
-      } catch {}
+      // Resolve the theme before first paint (no flash): saved choice, else the OS setting.
+      (() => {
+        const mq = matchMedia('(prefers-color-scheme: dark)');
+        const apply = () => {
+          let saved;
+          try { saved = localStorage.getItem('theme'); } catch {}
+          document.documentElement.dataset.theme =
+            saved === 'dark' || saved === 'light' ? saved : mq.matches ? 'dark' : 'light';
+        };
+        apply();
+        mq.addEventListener('change', apply);
+        window.__applyTheme = apply;
+      })();
     </script>
   </head>
   <body>

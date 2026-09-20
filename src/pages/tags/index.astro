@@ -5,8 +5,8 @@ import { collectTags, getPosts } from '../../lib/posts';
 const tags = collectTags(await getPosts());
 ---
 <BaseLayout title="Tags">
-  <h1 class="page-title">Tags</h1>
-  <ul class="tag-list">
-    {tags.map((t) => <li><a href={`/tags/${t.slug}/`}>{t.name}<small>{t.posts.length}</small></a></li>)}
-  </ul>
+  <h1 class="page-title">Tags<small>{tags.length}</small></h1>
+  <nav class="tag-index" aria-label="Tags">
+    {tags.map((t) => <a href={`/tags/${t.slug}/`}>#{t.slug}<span>{t.posts.length}</span></a>)}
+  </nav>
 </BaseLayout>

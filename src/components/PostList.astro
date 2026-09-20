@@ -3,14 +3,20 @@ import { formatDate, postTags, type Post } from '../lib/posts';
 
 interface Props { posts: Post[] }
 const { posts } = Astro.props;
+const short = (d: Date) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
 ---
-{posts.map((post) => (
-  <article class="entry">
-    <h2><a href={`/post/${post.id}/`}>{post.data.title}</a></h2>
-    {post.data.description && <p>{post.data.description}</p>}
-    <div class="meta"><time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time></div>
-    <ul class="tag-list">
-      {postTags(post).map((t) => <li><a href={`/tags/${t.slug}/`}>{t.name}</a></li>)}
-    </ul>
-  </article>
-))}
+<ul class="rows">
+  {posts.map((post) => (
+    <li>
+      <a class="row" href={`/post/${post.id}/`}>
+        <time datetime={post.data.date.toISOString()} title={formatDate(post.data.date)}>{short(post.data.date)}</time>
+        <span class="title">
+          {post.data.title}
+          {post.data.description && <span class="desc">{post.data.description}</span>}
+        </span>
+        <span class="tags">{postTags(post).map((t) => `#${t.slug}`).join(' ')}</span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+    </li>
+  ))}
+</ul>

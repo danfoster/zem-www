@@ -4,58 +4,31 @@
   src/plugins/plantuml-skin.iuml draws every diagram with a small fixed set of
   colours. PlantUML writes them into the SVG as `fill="#xxx"` attributes and
   `style="stroke:#xxx"` declarations; the selectors below match those exact
-  colours and swap in theme variables. Change a colour in the skin and you
-  must change it here too.
+  colours and swap in the site palette (defined in global.css), so diagrams
+  follow the theme with no per-theme rules here. Change a colour in the skin
+  and you must change it here too.
 */
 :root {
-  --d-text: #232323;
-  --d-line: #444444;
-  --d-box-bg: #eef3fa;
-  --d-box-border: #5b7db1;
-  --d-decision-bg: #fff3d6;
-  --d-decision-border: #c9962b;
-  --d-note-bg: #fff8dc;
-  --d-note-border: #c9b458;
-  --d-group-bg: #f6f6f6;
-  --d-group-border: #aaaaaa;
-  --d-lifeline: #999999;
-}
-
-:root[data-theme='dark'] {
-  --d-text: #dadadb;
-  --d-line: #a0a4ab;
-  --d-box-bg: #26334a;
-  --d-box-border: #6f93cc;
-  --d-decision-bg: #4a3f22;
-  --d-decision-border: #d1a446;
-  --d-note-bg: #423d24;
-  --d-note-border: #a99a48;
-  --d-group-bg: #2a2c30;
-  --d-group-border: #5a5d63;
-  --d-lifeline: #7d8087;
-}
-
-/* No explicit choice yet: follow the OS, same as global.css. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
-    --d-text: #dadadb;
-    --d-line: #a0a4ab;
-    --d-box-bg: #26334a;
-    --d-box-border: #6f93cc;
-    --d-decision-bg: #4a3f22;
-    --d-decision-border: #d1a446;
-    --d-note-bg: #423d24;
-    --d-note-border: #a99a48;
-    --d-group-bg: #2a2c30;
-    --d-group-border: #5a5d63;
-    --d-lifeline: #7d8087;
-  }
+  --d-text: var(--ink);
+  --d-line: var(--ink);
+  --d-box-bg: var(--surface);
+  --d-box-border: var(--ink);
+  --d-decision-bg: var(--accent-soft);
+  --d-decision-border: var(--accent);
+  --d-note-bg: var(--bg);
+  --d-note-border: var(--muted);
+  --d-group-bg: var(--bg);
+  --d-group-border: var(--muted);
+  --d-lifeline: var(--muted);
 }
 
 figure.plantuml {
-  margin: 1.5rem 0;
+  margin: 2rem 0;
+  padding: 1.25rem 1rem;
   overflow-x: auto;
   text-align: center;
+  border: 1px solid var(--hair);
+  background: var(--bg);
 }
 figure.plantuml svg {
   max-width: 100%;

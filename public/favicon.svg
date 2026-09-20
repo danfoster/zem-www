@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <style>
+    .bg { fill: #08758f } .z { fill: #fff }
+    @media (prefers-color-scheme: dark) { .bg { fill: #22d3ee } .z { fill: #04121a } }
+  </style>
+  <rect class="bg" width="100" height="100" />
+  <path class="z" transform="translate(19 19) scale(.62)" d="M0 0H100V20L34 80H100V100H0V80L66 20H0Z" />
+</svg>

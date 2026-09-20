@@ -11,12 +11,14 @@ const { Content } = await render(project);
 <BaseLayout title={project.data.title} description={project.data.summary}>
   <article>
     <header class="post-header">
+      <div class="meta">
+        <span>{project.data.status}{project.data.tech.length > 0 && ` · ${project.data.tech.join(', ')}`}</span>
+        <ul class="taglinks">
+          {project.data.repo && <li><a href={project.data.repo}>source</a></li>}
+          {project.data.url && <li><a href={project.data.url}>website</a></li>}
+        </ul>
+      </div>
       <h1>{project.data.title}</h1>
-      <div class="meta">{project.data.status}{project.data.tech.length > 0 && ` · ${project.data.tech.join(', ')}`}</div>
-      <ul class="tag-list">
-        {project.data.repo && <li><a href={project.data.repo}>Source</a></li>}
-        {project.data.url && <li><a href={project.data.url}>Website</a></li>}
-      </ul>
     </header>
     <div class="prose"><Content /></div>
   </article>

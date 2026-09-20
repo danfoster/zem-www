@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { visit } from 'unist-util-visit';
 
 // Bump to invalidate every cached diagram (e.g. after changing post-processing).
-const CACHE_VERSION = '2';
+const CACHE_VERSION = '3';
 
 const skinPath = fileURLToPath(new URL('./plantuml-skin.iuml', import.meta.url));
 const cacheDir = fileURLToPath(new URL('../../node_modules/.cache/plantuml/', import.meta.url));
