@@ -1,0 +1,32 @@
+---
+import Logo from './Logo.astro';
+// import.meta.glob instead of getCollection: no "collection is empty" warning on every page.
+const hasProjects = Object.keys(import.meta.glob('/src/content/projects/**/*.md')).length > 0;
+const path = Astro.url.pathname;
+const links = [
+  ...(hasProjects ? [{ href: '/projects/', label: 'Projects' }] : []),
+  { href: '/post/', label: 'Blog' },
+  { href: '/tags/', label: 'Tags' },
+  { href: '/search/', label: 'Search' },
+];
+const current = (href: string) => path.startsWith(href);
+---
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="zem, home"><Logo /></a>
+    <nav class="site-nav" aria-label="Main">
+      {links.map((l) => <a href={l.href} aria-current={current(l.href) ? 'page' : undefined}>{l.label}</a>)}
+      <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+        <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5z" /></svg>
+        <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" /><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1" /></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+<script>
+  document.querySelector('.theme-toggle')?.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem('theme', next); } catch {}
+    (window as any).__applyTheme?.();
+  });
+</script>

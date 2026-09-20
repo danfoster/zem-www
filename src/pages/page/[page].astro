@@ -1,0 +1,11 @@
+---
+import HomePage from '../../components/HomePage.astro';
+import { getPosts, paginate } from '../../lib/posts';
+
+export async function getStaticPaths() {
+  const all = await getPosts();
+  return paginate(all).slice(1).map((p) => ({ params: { page: String(p.number) }, props: { ...p, count: all.length } }));
+}
+const { items, number, total, count } = Astro.props;
+---
+<HomePage posts={items} number={number} total={total} count={count} />

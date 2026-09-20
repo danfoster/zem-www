@@ -1,0 +1,7 @@
+---
+import BlogArchive from '../../components/BlogArchive.astro';
+import { getPosts, paginate } from '../../lib/posts';
+
+const [first] = paginate(await getPosts());
+---
+<BlogArchive posts={first.items} number={first.number} total={first.total} />

@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { collectTags, getPosts } from '../../lib/posts';
+
+const tags = collectTags(await getPosts());
+---
+<BaseLayout title="Tags">
+  <h1 class="page-title">Tags<small>{tags.length}</small></h1>
+  <nav class="tag-index" aria-label="Tags">
+    {tags.map((t) => <a href={`/tags/${t.slug}/`}>#{t.slug}<span>{t.posts.length}</span></a>)}
+  </nav>
+</BaseLayout>

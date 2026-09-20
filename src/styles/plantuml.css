@@ -1,0 +1,54 @@
+/*
+  Theme mapping for PlantUML diagrams.
+
+  src/plugins/plantuml-skin.iuml draws every diagram with a small fixed set of
+  colours. PlantUML writes them into the SVG as `fill="#xxx"` attributes and
+  `style="stroke:#xxx"` declarations; the selectors below match those exact
+  colours and swap in the site palette (defined in global.css), so diagrams
+  follow the theme with no per-theme rules here. Change a colour in the skin
+  and you must change it here too.
+*/
+:root {
+  --d-text: var(--ink);
+  --d-line: var(--ink);
+  --d-box-bg: var(--surface);
+  --d-box-border: var(--ink);
+  --d-decision-bg: var(--accent-soft);
+  --d-decision-border: var(--accent);
+  --d-note-bg: var(--bg);
+  --d-note-border: var(--muted);
+  --d-group-bg: var(--bg);
+  --d-group-border: var(--muted);
+  --d-lifeline: var(--muted);
+}
+
+figure.plantuml {
+  margin: 2rem 0;
+  padding: 1.25rem 1rem;
+  overflow-x: auto;
+  text-align: center;
+  border: 1px solid var(--hair);
+  background: var(--bg);
+}
+figure.plantuml svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* fills (attributes) */
+figure.plantuml [fill='#232323' i] { fill: var(--d-text); }
+figure.plantuml [fill='#444' i],
+figure.plantuml [fill='#444444' i] { fill: var(--d-line); }
+figure.plantuml [fill='#EEF3FA' i] { fill: var(--d-box-bg); }
+figure.plantuml [fill='#FFF3D6' i] { fill: var(--d-decision-bg); }
+figure.plantuml [fill='#FFF8DC' i] { fill: var(--d-note-bg); }
+figure.plantuml [fill='#F6F6F6' i] { fill: var(--d-group-bg); }
+
+/* strokes (inline style, so !important is needed to override) */
+figure.plantuml [style*='stroke:#222' i],
+figure.plantuml [style*='stroke:#444' i] { stroke: var(--d-line) !important; }
+figure.plantuml [style*='stroke:#5B7DB1' i] { stroke: var(--d-box-border) !important; }
+figure.plantuml [style*='stroke:#C9962B' i] { stroke: var(--d-decision-border) !important; }
+figure.plantuml [style*='stroke:#C9B458' i] { stroke: var(--d-note-border) !important; }
+figure.plantuml [style*='stroke:#AAA' i] { stroke: var(--d-group-border) !important; }
+figure.plantuml [style*='stroke:#999' i] { stroke: var(--d-lifeline) !important; }
