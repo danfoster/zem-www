@@ -1,0 +1,16 @@
+---
+import { formatDate, postTags, type Post } from '../lib/posts';
+
+interface Props { posts: Post[] }
+const { posts } = Astro.props;
+---
+{posts.map((post) => (
+  <article class="entry">
+    <h2><a href={`/post/${post.id}/`}>{post.data.title}</a></h2>
+    {post.data.description && <p>{post.data.description}</p>}
+    <div class="meta"><time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time></div>
+    <ul class="tag-list">
+      {postTags(post).map((t) => <li><a href={`/tags/${t.slug}/`}>{t.name}</a></li>)}
+    </ul>
+  </article>
+))}

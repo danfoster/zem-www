@@ -1,0 +1,13 @@
+---
+interface Props { number: number; total: number; base: string }
+const { number, total, base } = Astro.props;
+// base is the list's root URL with a trailing slash, e.g. "/" or "/post/".
+const href = (n: number) => (n === 1 ? base : `${base}page/${n}/`);
+---
+{total > 1 && (
+  <nav class="pagination" aria-label="Pagination">
+    {number > 1 ? <a href={href(number - 1)} rel="prev">&laquo; Newer</a> : <span />}
+    <span class="meta">Page {number} of {total}</span>
+    {number < total ? <a href={href(number + 1)} rel="next">Older &raquo;</a> : <span />}
+  </nav>
+)}

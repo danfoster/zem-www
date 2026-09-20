@@ -1,0 +1,35 @@
+---
+import { Image } from 'astro:assets';
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { formatDate, getPosts, postTags } from '../../lib/posts';
+
+export async function getStaticPaths() {
+  return (await getPosts()).map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const tags = postTags(post);
+---
+<BaseLayout title={post.data.title} description={post.data.description} type="article">
+  <article data-pagefind-body>
+    <header class="post-header">
+      <h1>{post.data.title}</h1>
+      <div class="meta">
+        <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
+      </div>
+      <ul class="tag-list">
+        {tags.map((t) => <li><a href={`/tags/${t.slug}/`}>{t.name}</a></li>)}
+      </ul>
+    </header>
+    {post.data.cover && (
+      <figure class="cover">
+        <Image src={post.data.cover.image} alt="" widths={[480, 720, 1080]} sizes="(min-width: 46rem) 44rem, 100vw" />
+      </figure>
+    )}
+    <div class="prose">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>

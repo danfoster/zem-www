@@ -1,0 +1,7 @@
+---
+import HomePage from '../components/HomePage.astro';
+import { getPosts, paginate } from '../lib/posts';
+
+const [first] = paginate(await getPosts());
+---
+<HomePage posts={first.items} number={first.number} total={first.total} />

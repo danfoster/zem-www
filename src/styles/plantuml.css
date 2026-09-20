@@ -1,0 +1,81 @@
+/*
+  Theme mapping for PlantUML diagrams.
+
+  src/plugins/plantuml-skin.iuml draws every diagram with a small fixed set of
+  colours. PlantUML writes them into the SVG as `fill="#xxx"` attributes and
+  `style="stroke:#xxx"` declarations; the selectors below match those exact
+  colours and swap in theme variables. Change a colour in the skin and you
+  must change it here too.
+*/
+:root {
+  --d-text: #232323;
+  --d-line: #444444;
+  --d-box-bg: #eef3fa;
+  --d-box-border: #5b7db1;
+  --d-decision-bg: #fff3d6;
+  --d-decision-border: #c9962b;
+  --d-note-bg: #fff8dc;
+  --d-note-border: #c9b458;
+  --d-group-bg: #f6f6f6;
+  --d-group-border: #aaaaaa;
+  --d-lifeline: #999999;
+}
+
+:root[data-theme='dark'] {
+  --d-text: #dadadb;
+  --d-line: #a0a4ab;
+  --d-box-bg: #26334a;
+  --d-box-border: #6f93cc;
+  --d-decision-bg: #4a3f22;
+  --d-decision-border: #d1a446;
+  --d-note-bg: #423d24;
+  --d-note-border: #a99a48;
+  --d-group-bg: #2a2c30;
+  --d-group-border: #5a5d63;
+  --d-lifeline: #7d8087;
+}
+
+/* No explicit choice yet: follow the OS, same as global.css. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --d-text: #dadadb;
+    --d-line: #a0a4ab;
+    --d-box-bg: #26334a;
+    --d-box-border: #6f93cc;
+    --d-decision-bg: #4a3f22;
+    --d-decision-border: #d1a446;
+    --d-note-bg: #423d24;
+    --d-note-border: #a99a48;
+    --d-group-bg: #2a2c30;
+    --d-group-border: #5a5d63;
+    --d-lifeline: #7d8087;
+  }
+}
+
+figure.plantuml {
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  text-align: center;
+}
+figure.plantuml svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* fills (attributes) */
+figure.plantuml [fill='#232323' i] { fill: var(--d-text); }
+figure.plantuml [fill='#444' i],
+figure.plantuml [fill='#444444' i] { fill: var(--d-line); }
+figure.plantuml [fill='#EEF3FA' i] { fill: var(--d-box-bg); }
+figure.plantuml [fill='#FFF3D6' i] { fill: var(--d-decision-bg); }
+figure.plantuml [fill='#FFF8DC' i] { fill: var(--d-note-bg); }
+figure.plantuml [fill='#F6F6F6' i] { fill: var(--d-group-bg); }
+
+/* strokes (inline style, so !important is needed to override) */
+figure.plantuml [style*='stroke:#222' i],
+figure.plantuml [style*='stroke:#444' i] { stroke: var(--d-line) !important; }
+figure.plantuml [style*='stroke:#5B7DB1' i] { stroke: var(--d-box-border) !important; }
+figure.plantuml [style*='stroke:#C9962B' i] { stroke: var(--d-decision-border) !important; }
+figure.plantuml [style*='stroke:#C9B458' i] { stroke: var(--d-note-border) !important; }
+figure.plantuml [style*='stroke:#AAA' i] { stroke: var(--d-group-border) !important; }
+figure.plantuml [style*='stroke:#999' i] { stroke: var(--d-lifeline) !important; }

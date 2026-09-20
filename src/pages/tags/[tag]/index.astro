@@ -1,0 +1,13 @@
+---
+import TagPage from '../../../components/TagPage.astro';
+import { collectTags, getPosts, paginate } from '../../../lib/posts';
+
+export async function getStaticPaths() {
+  return collectTags(await getPosts()).map((t) => ({
+    params: { tag: t.slug },
+    props: { name: t.name, slug: t.slug, page: paginate(t.posts)[0] },
+  }));
+}
+const { name, slug, page } = Astro.props;
+---
+<TagPage name={name} slug={slug} posts={page.items} number={page.number} total={page.total} />

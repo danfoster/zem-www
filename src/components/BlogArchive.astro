@@ -1,0 +1,14 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostList from './PostList.astro';
+import Pagination from './Pagination.astro';
+import type { Post } from '../lib/posts';
+
+interface Props { posts: Post[]; number: number; total: number }
+const { posts, number, total } = Astro.props;
+---
+<BaseLayout title={number > 1 ? `Blog, page ${number}` : 'Blog'}>
+  <h1 class="page-title">Blog</h1>
+  <PostList posts={posts} />
+  <Pagination number={number} total={total} base="/post/" />
+</BaseLayout>
