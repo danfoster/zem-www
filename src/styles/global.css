@@ -230,3 +230,18 @@ a { color: inherit; }
 
 /* ---------- projects ---------- */
 .project-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--ink); }
+
+/* ---------- lightbox (see Lightbox.astro) ---------- */
+figure.plantuml, .prose img, .cover img { cursor: zoom-in; }
+.prose a img { cursor: pointer; }
+figure.plantuml:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+html:has(dialog.lightbox[open]) { overflow: hidden; }
+dialog.lightbox {
+  position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none;
+  margin: 0; padding: 0; border: 0; overflow: auto; cursor: zoom-out;
+  background: var(--bg); color: var(--ink);
+}
+dialog.lightbox[open] { display: flex; }
+dialog.lightbox::backdrop { background: transparent; }
+.lightbox-stage { margin: auto; padding: 1.5rem; } /* margin:auto centres it, and still lets tall content scroll */
+.lightbox-stage img { display: block; max-width: none; height: auto; border: 1px solid var(--ink); }
