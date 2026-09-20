@@ -93,7 +93,7 @@ luks-<uuid> UUID=<uuid> none luks,tpm2-device=auto,headless=0,tries=3,timeout=30
 
 ### Kernel command line
 
-dracut doesn't find LUKS devices on its own the way `initramfs-tools` does. Without the following, my machine hung at boot and I had to add them by hand at the GRUB menu (press `e`).
+dracut doesn't find LUKS devices on its own the way `initramfs-tools` does. Without the following, my machine hung at boot and I had to add them by hand at the GRUB menu.
 
 Add to `/etc/default/grub`:
 
@@ -116,8 +116,7 @@ Dracut replaces `initramfs-tools` for building the initrd from here on. `/etc/cr
 
 ### Enrol the TPM
 
-Find your LUKS device with `lsblk -f`. Mine is `/dev/md127` as the LUKS sits on a RAID1, on a plain install it's a partition such as `/dev/nvme0n1p3`.
-
+Find your LUKS device with `lsblk -f`.
 ```bash
 systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0+7 /dev/nvme0n1p3
 ```
@@ -160,8 +159,6 @@ systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0+7 /dev/nvme0n1p3
 ```
 
 `--wipe-slot=tpm2` removes every TPM2 slot, so you don't need to look up the slot number. Your passphrase slot is not touched.
-
-You will need to do this more than once, so I wrote a script that finds the LUKS device, checks which slots are TPM2 before wiping anything, and asks for confirmation. I deploy it with ansible to `/usr/local/sbin/tpm2-reenroll`. Set `TPM2_PCRS` to change the PCRs.
 
 Re-enrol whenever the boot chain changes: Secure Boot toggled or its keys changed, firmware updates (PCR 0), or a new bootloader. With `0+7` you don't need to on kernel updates.
 
@@ -215,8 +212,6 @@ stop
 
 So `timeout=` is a delay added to every boot, and `timeout=0` (wait forever) means the TPM is never tried at all. I haven't found a way to have it try the TPM first and only prompt on failure. 30 seconds was a compromise, and it is shorter if you'd rather not wait.
 
-I got this from observing one machine, not from the systemd source, so treat the mechanism with some suspicion.
-
 ### PCRs
 
 The TPM records a hash of each stage of the boot in its Platform Configuration Registers (PCRs). When you enrol, the LUKS key is sealed against the current values of the PCRs you pick, and the TPM will only release it if they still match.
@@ -252,46 +247,33 @@ else any PCR differs
 end
 ```
 
-| PCR | Measures            | Changes when                      |
-| --- | ------------------- | --------------------------------- |
-| 0   | UEFI firmware       | Firmware update                   |
-| 4   | Bootloader          | GRUB update                       |
-| 7   | Secure Boot state   | Secure Boot toggled, keys changed |
-| 8   | Kernel command line | Any command line change           |
-| 9   | Initramfs + kernel  | Kernel update                     |
-| 11  | UKI (whole image)   | Any change to the UKI             |
+| PCR | Measures                    | Changes when                      |
+| --- | --------------------------- | --------------------------------- |
+| 0   | UEFI firmware               | Firmware update                   |
+| 4   | Bootloader                  | GRUB update                       |
+| 7   | Secure Boot state           | Secure Boot toggled, keys changed |
+| 8   | Kernel command line         | Any command line change           |
+| 9   | Initramfs + kernel          | Kernel update                     |
+| 11  | UKI (whole image)           | Any change to the UKI             |
+| 14  | shim's MOK certs and hashes | A MOK is enrolled or removed      |
 
 My first attempt was `--tpm2-pcrs=7+8+9+14`. PCRs 8 and 9 change with every kernel update, so the first `apt upgrade` that pulled in a new kernel left the machine waiting at a passphrase prompt. I settled on 0+7, which are stable across kernel updates.
 
 ### What it does and doesn't protect against
 
-PCR 7 on its own protects against the drive being removed and read elsewhere, and against booting with Secure Boot off. It doesn't protect against someone tampering with `/boot` while leaving Secure Boot on, which is why the firmware password matters. PCR 0 adds firmware tampering and motherboard swaps.
+With the key sealed in the TPM, the drive is useless in another machine, whichever PCRs you choose. PCR 7 adds a check on how the machine boots: the TPM only releases the key if Secure Boot is on and its keys haven't changed, so booting with Secure Boot off or from a differently signed USB gets nothing. It doesn't cover `/boot`. Someone with physical access can still swap the unsigned initramfs while leaving Secure Boot on, which is why the firmware password matters. PCR 0 adds firmware tampering and motherboard swaps.
 
 For a machine where the main worry is opportunistic theft, 0+7 with a firmware password and a passphrase fallback is enough for me.
 
-### grub-install fails to create /boot/efi/EFI/debian
-
-Following these steps on my own machine, `grub-install` failed with:
-
-```plaintext
-grub-install: error: failed to make directory: '/boot/efi/EFI/debian'
-```
-
-TODO: what was the cause/fix here?
-
 ## Dead ends
 
-### Adding systemd-boot to a machine with GRUB
+### UKI, systemd-boot and PCR 11
 
-Debian's systemd-boot and Secure Boot integration assumes you don't have GRUB. If the GRUB packages are installed, the postinst scripts notice and do nothing, with no error. I installed `shim-signed` and `systemd-boot-efi-amd64-signed`, saw no problems, and nothing had changed.
+PCR 7 leaves one gap: it says nothing about the initramfs, so someone who can write to `/boot` can swap it while Secure Boot stays on. A Unified Kernel Image (UKI) closes it. It bundles the kernel, initramfs and command line into one signed binary, and PCR 11 measures the whole image, so the TPM only unseals for exactly that image. The cost is that every kernel update changes the UKI, so you have to re-enrol every time.
 
-Removing the GRUB packages isn't enough either. I had to remove the files from the ESP as well (`/boot/efi/EFI/debian`) before the scripts did anything.
+I tried this, and it needs systemd-boot rather than GRUB. That's the awkward part on a machine installed with GRUB. Debian's systemd-boot and Secure Boot integration assumes GRUB isn't there. If the GRUB packages are installed, the postinst scripts notice and do nothing, with no error. I installed `shim-signed` and `systemd-boot-efi-amd64-signed`, saw no problems, and nothing had changed. Removing the GRUB packages wasn't enough either. I had to remove the files from the ESP (`/boot/efi/EFI/debian`) before the scripts did anything.
 
-### UKI and PCR 11
-
-I tried a Unified Kernel Image, which bundles the kernel, initramfs and command line into one signed binary. That lets you bind to PCR 11 as well, so tampering with the initramfs is caught even with Secure Boot on. The cost is that every kernel update changes the UKI, so you have to re-enrol every time.
-
-This needs systemd-boot rather than GRUB, so after the previous dead end I went back to signed GRUB. What I remember of the setup:
+What I remember of the setup:
 
 ```bash
 apt purge grub-common grub2-common grub-efi-amd64 grub-efi-amd64-bin grub-efi-amd64-unsigned
@@ -310,7 +292,7 @@ uki_generator=ukify
 
 and `/etc/kernel/uki.conf` pointing `Cmdline=@/etc/kernel/cmdline` at your command line. Have a bootable USB before you purge GRUB.
 
-I haven't kept this running, so I can't vouch for every step.
+I went back to signed GRUB. Re-enrolling on every kernel update isn't worth it for a machine where the main worry is opportunistic theft, and I haven't kept this running, so I can't vouch for every step above.
 
 ### Forgetting to re-enrol
 
