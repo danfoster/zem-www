@@ -13,6 +13,10 @@ const blog = defineCollection({
       date: z.coerce.date(),
       description: z.string().optional(),
       tags: z.array(z.string()).default([]),
+      // Old URLs that should redirect to this post, e.g. ["/post/kerberos-kdc/"]. Only needed for
+      // posts that were already published at a different URL; leave it off for new posts. The first
+      // entry is treated as the post's original URL (see the feed's item IDs in pages/index.xml.ts).
+      aliases: z.array(z.string().regex(/^\/.+\/$/, 'aliases must look like "/post/old-name/"')).default([]),
       cover: z.object({ image: image() }).optional(),
       draft: z.boolean().default(false),
     }),

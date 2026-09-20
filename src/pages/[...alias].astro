@@ -1,0 +1,16 @@
+---
+// Old URLs listed in a post's `aliases` front matter redirect to the post. The site is static, so
+// each becomes a small HTML page (meta refresh + canonical link) rather than an HTTP redirect.
+import { getPosts, postUrl } from '../lib/posts';
+
+export async function getStaticPaths() {
+  return (await getPosts()).flatMap((post) =>
+    post.data.aliases.map((alias) => ({
+      params: { alias: alias.replace(/^\/|\/$/g, '') },
+      props: { to: postUrl(post) },
+    })),
+  );
+}
+
+return Astro.redirect(Astro.props.to, 301);
+---

@@ -1,5 +1,5 @@
 ---
-import { formatDate, postTags, type Post } from '../lib/posts';
+import { formatDate, postTags, postUrl, type Post } from '../lib/posts';
 
 interface Props { posts: Post[] }
 const { posts } = Astro.props;
@@ -8,7 +8,7 @@ const short = (d: Date) => d.toLocaleDateString('en-GB', { day: '2-digit', month
 <ul class="rows">
   {posts.map((post) => (
     <li>
-      <a class="row" href={`/post/${post.id}/`}>
+      <a class="row" href={postUrl(post)}>
         <time datetime={post.data.date.toISOString()} title={formatDate(post.data.date)}>{short(post.data.date)}</time>
         <span class="title">
           {post.data.title}

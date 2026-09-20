@@ -29,7 +29,7 @@ export default function devSearch() {
             const sitemap = await (await fetch(`${origin}/sitemap.xml`)).text();
             const posts = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)]
               .map((m) => new URL(m[1]).pathname)
-              .filter((p) => /^\/post\/[^/]+\/$/.test(p));
+              .filter((p) => /^\/post\/\d{4}\/[^/]+\/$/.test(p));
 
             const { index, errors } = await pagefind.createIndex();
             if (!index) throw new Error(errors.join(', '));
