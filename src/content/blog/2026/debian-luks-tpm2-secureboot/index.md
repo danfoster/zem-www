@@ -11,11 +11,11 @@ tags:
 description: Unlocking a LUKS root automatically from the TPM on Debian 13 (Trixie), with Secure Boot and signed GRUB.
 ---
 
-I have a machine with an encrypted root that I don't want to type a passphrase into on every boot. It might also get stolen, so I don't want to just leave the key on disk.
+I have a machine with an encrypted root, which means a passphrase prompt on a black screen before anything else happens. Fine the first time. Tedious the fortieth (and I reboot more than I'd like to admit for someone who cares about this stuff). It could also just get stolen, so leaving the key sat on disk unencrypted isn't an option either.
 
-The answer is to seal the LUKS key in the TPM, and only let it out when the machine has booted the way I expect. This post covers doing that on Debian 13 with Secure Boot enabled.
+The answer, it turns out, is to let the TPM hold the key and only hand it over when the machine has booted the way I expect. This post is that setup, done on Debian 13 with Secure Boot switched on.
 
-The first half is the setup that ended up working. The second half is everything that didn't, in case you go down the same paths.
+First half: what actually worked. Second half: everything that didn't, in case your paths cross mine.
 
 ## Goal
 
@@ -23,7 +23,7 @@ The first half is the setup that ended up working. The second half is everything
 * Booting normally must not need a passphrase
 * If the TPM refuses to unlock, there should be a passphrase fallback
 
-The starting point is Debian 13, LUKS on LVM, a passphrase prompt at boot, UEFI, a TPM 2.0 chip and GRUB as the bootloader.
+Starting point: Debian 13, LUKS on LVM, a passphrase prompt at boot, UEFI, a TPM 2.0 chip, GRUB as the bootloader. Nothing exotic.
 
 :::warning
 A passphrase fallback only helps if you can get to the console. Moving to dracut (below) removed `dropbear-initramfs` from my machine, so I lost remote unlocking. If the TPM doesn't unlock, I need to be physically there. See [Remote unlocking](/post/2024/remote-luks-unlocking/) for the setup this replaced.
@@ -31,7 +31,7 @@ A passphrase fallback only helps if you can get to the console. Moving to dracut
 
 ## Implementation
 
-The order matters, mainly because enabling Secure Boot invalidates the TPM enrolment and the crypttab has to be in the initrd before any of it works. TPM unlocking comes first so you can prove it works before adding Secure Boot on top.
+Order matters here: enabling Secure Boot invalidates the TPM enrolment, and the crypttab needs to be in the initrd before any of this works. So: TPM unlocking first, so you can prove it works, then Secure Boot on top.
 
 ```plantuml {alt="Setup order"}
 title Setup order
@@ -58,7 +58,7 @@ stop
 
 ### Packages
 
-Debian's default initramfs tooling (`initramfs-tools` with `cryptsetup-initramfs`) doesn't understand the `tpm2-device` option in crypttab. It doesn't fail, it just ignores it and asks for a passphrase. You only see this if you read the output of `update-initramfs`:
+Debian's default initramfs tooling (`initramfs-tools` with `cryptsetup-initramfs`) doesn't understand the `tpm2-device` option in crypttab. It doesn't fail loudly, which would at least be helpful - it just quietly ignores the option and asks for a passphrase anyway. You only find out if you read the output of `update-initramfs`:
 
 ```plaintext
 cryptsetup: WARNING: md1_crypt: ignoring unknown option 'tpm2-device'
@@ -66,13 +66,13 @@ cryptsetup: WARNING: md1_crypt: ignoring unknown option 'headless'
 cryptsetup: WARNING: md1_crypt: ignoring unknown option 'timeout'
 ```
 
-`dracut` uses `systemd-cryptsetup` in the initrd, which does support it.
+`dracut` uses `systemd-cryptsetup` in the initrd instead, which does support it.
 
 ```bash
 apt install dracut tpm2-tools
 ```
 
-`tpm2-tools` needs to be installed explicitly. Without it `systemd-cryptenroll` can fail with an error that looks like a hardware fault ([systemd#31925](https://github.com/systemd/systemd/issues/31925)):
+`tpm2-tools` needs to be installed explicitly. Without it, `systemd-cryptenroll` fails with an error that reads like a dying chip rather than a missing package ([systemd#31925](https://github.com/systemd/systemd/issues/31925)):
 
 ```plaintext
 TPM does not support AES-128-CFB.
@@ -87,13 +87,13 @@ Edit the entry for your LUKS device in `/etc/crypttab`:
 luks-<uuid> UUID=<uuid> none luks,tpm2-device=auto,headless=0,tries=3,timeout=30
 ```
 
-`headless=0` tells systemd-cryptsetup that someone may be at the console to type a passphrase. Without it, a failed TPM unlock left me at an emergency shell rather than a prompt.
+`headless=0` tells systemd-cryptsetup that someone may be sitting at the console to type a passphrase. Leave it out and a failed TPM unlock drops you at an emergency shell instead of a prompt.
 
 `timeout=` is not what it sounds like, see [timeout](#timeout) below. The UUID is the one from `cryptsetup luksDump <device> | grep UUID`.
 
 ### Kernel command line
 
-dracut doesn't find LUKS devices on its own the way `initramfs-tools` does. Without the following, my machine hung at boot and I had to add them by hand at the GRUB menu.
+dracut doesn't go looking for LUKS devices on its own the way `initramfs-tools` does. Without the following, my machine just hung at boot, and I had to type these in by hand at the GRUB menu to get anywhere.
 
 Add to `/etc/default/grub`:
 
@@ -101,18 +101,18 @@ Add to `/etc/default/grub`:
 GRUB_CMDLINE_LINUX="rd.luks=1 rd.auto"
 ```
 
-`rd.luks=1` tells dracut to activate LUKS devices. `rd.auto` enables automatic assembly of RAID, LVM and LUKS. If you don't have RAID you can probably leave it out, but it doesn't do any harm.
+`rd.luks=1` tells dracut to activate LUKS devices. `rd.auto` enables automatic assembly of RAID, LVM and LUKS. Skip it if you don't have RAID, though it does no harm left in.
 
 ### Rebuild
 
-Both the crypttab and the command line have to be baked in, so do this after the two edits above:
+Both the crypttab and the command line have to be baked into the initrd, so do this after the two edits above:
 
 ```bash
 dracut --force --kver $(uname -r)
 update-grub
 ```
 
-Dracut replaces `initramfs-tools` for building the initrd from here on. `/etc/crypttab` is unchanged in format.
+Dracut takes over from `initramfs-tools` for building the initrd from here on. `/etc/crypttab` doesn't change format, reassuringly.
 
 ### Enrol the TPM
 
@@ -121,9 +121,9 @@ Find your LUKS device with `lsblk -f`.
 systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0+7 /dev/nvme0n1p3
 ```
 
-You'll be asked for an existing passphrase. See [PCRs](#pcrs) for why `0+7`.
+You'll be asked for an existing passphrase. See [PCRs](#pcrs) below for why `0+7` specifically.
 
-Reboot and check that it unlocks without you typing anything. Then check the fallback works: add `rd.luks.options=tpm2-device=no` to the kernel command line at the GRUB menu and make sure you get a passphrase prompt rather than a hang.
+Reboot and check it unlocks without you touching the keyboard. Then check the fallback still works: add `rd.luks.options=tpm2-device=no` at the GRUB menu and make sure you get a passphrase prompt rather than a hang. Worth doing now rather than finding out later.
 
 ### Secure Boot
 
@@ -141,7 +141,7 @@ The boot chain is now:
 UEFI -> shim (Microsoft signed) -> grubx64.efi (Debian signed) -> kernel
 ```
 
-Check that GRUB really is signed:
+Check that GRUB really is signed, rather than taking it on faith:
 
 ```bash
 sbverify --list /boot/efi/EFI/debian/grubx64.efi
@@ -151,24 +151,24 @@ This should show a Debian Secure Boot signer. Then enable Secure Boot in the UEF
 
 ### Re-enrol the TPM
 
-Enabling Secure Boot changed PCR 7, so the key you sealed earlier no longer matches. Wipe the TPM slot and enrol again:
+Enabling Secure Boot changed PCR 7, so the key sealed earlier no longer matches anything. Wipe the TPM slot and enrol again:
 
 ```bash
 systemd-cryptenroll --wipe-slot=tpm2 /dev/nvme0n1p3
 systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0+7 /dev/nvme0n1p3
 ```
 
-`--wipe-slot=tpm2` removes every TPM2 slot, so you don't need to look up the slot number. Your passphrase slot is not touched.
+`--wipe-slot=tpm2` removes every TPM2 slot in one go, so there's no need to hunt for the slot number. Your passphrase slot is untouched.
 
-Re-enrol whenever the boot chain changes: Secure Boot toggled or its keys changed, firmware updates (PCR 0), or a new bootloader. With `0+7` you don't need to on kernel updates.
+Re-enrol whenever the boot chain changes: Secure Boot toggled or its keys changed, firmware updates (PCR 0), or a new bootloader. With `0+7` you're spared this on plain kernel updates, at least.
 
 ### Firmware password
 
-Set a UEFI firmware password. This matters more than anything else here.
+Set a UEFI firmware password. Of everything in this post, this matters most.
 
-PCR 7 only reflects the current Secure Boot state. Without a firmware password someone with physical access can turn Secure Boot off, boot a live USB, modify your unencrypted `/boot`, turn Secure Boot back on, and the TPM will happily unseal, because PCR 7 looks the same as it always did.
+PCR 7 only reflects the current Secure Boot state. Without a firmware password, someone with physical access can turn Secure Boot off, boot a live USB, modify your unencrypted `/boot`, turn Secure Boot back on, and the TPM will happily unseal the key - as far as PCR 7 is concerned, nothing happened.
 
-With the password they can't change Secure Boot or boot other media. How to set it depends on the vendor, but it's normally under Security in the UEFI setup. You're in there anyway to enable Secure Boot.
+With the password set, they can't touch Secure Boot or boot other media. How you set it depends on the vendor, but it's normally under Security in the UEFI setup - you're in there anyway to enable Secure Boot.
 
 ### GRUB password (optional)
 
@@ -179,13 +179,13 @@ set superusers="root"
 password_pbkdf2 root grub.pbkdf2.sha512.10000.<hash>
 ```
 
-You'll need to add `--unrestricted` to the normal boot menuentry in `/etc/grub.d/10_linux`, otherwise it asks for the password on every boot. Then `update-grub`, and rebuild dracut if you want the two in step.
+You'll need to add `--unrestricted` to the normal boot menuentry in `/etc/grub.d/10_linux`, otherwise it asks for the password on every single boot, which rather defeats the point of the whole exercise. Then `update-grub`, and rebuild dracut if you want the two in step.
 
 ## Things worth knowing
 
 ### timeout
 
-In this setup `timeout=` in crypttab is not "wait this long for the TPM, then ask for a passphrase". What I saw was the opposite. The passphrase prompt appears first and the TPM unlock only happens after `timeout=` seconds have passed with no input. Kernel log timestamps put the prompt at 6 seconds and the unlock at 36 seconds, with `timeout=30`.
+In this setup `timeout=` in crypttab does not mean "wait this long for the TPM, then ask for a passphrase" - which is what I assumed, and what the name suggests. What actually happens is the opposite. The passphrase prompt appears first, and the TPM unlock only kicks in once `timeout=` seconds have passed with no input. Kernel log timestamps put the prompt at 6 seconds and the unlock at 36 seconds, with `timeout=30` set.
 
 ```plantuml {alt="systemd-cryptsetup unlock flow"}
 title What systemd-cryptsetup does at boot (as observed with timeout=30)
@@ -210,11 +210,11 @@ endif
 stop
 ```
 
-So `timeout=` is a delay added to every boot, and `timeout=0` (wait forever) means the TPM is never tried at all. I haven't found a way to have it try the TPM first and only prompt on failure. 30 seconds was a compromise, and it is shorter if you'd rather not wait.
+So `timeout=` is really a delay added to every boot, and `timeout=0` (wait forever) means the TPM is never tried at all. I haven't found a way to try the TPM first and only prompt on failure, which is the behaviour I actually wanted. 30 seconds was my compromise - shorten it if you'd rather not wait.
 
 ### PCRs
 
-The TPM records a hash of each stage of the boot in its Platform Configuration Registers (PCRs). When you enrol, the LUKS key is sealed against the current values of the PCRs you pick, and the TPM will only release it if they still match.
+The TPM keeps a hash of each stage of the boot in its Platform Configuration Registers (PCRs). When you enrol, the LUKS key is sealed against the current values of whichever PCRs you pick, and the TPM only releases it if they still match.
 
 ```plantuml {alt="Boot chain and what the TPM sees"}
 title Boot chain and what the TPM sees
@@ -248,7 +248,7 @@ end
 ```
 
 | PCR | Measures                    | Changes when                      |
-| --- | --------------------------- | --------------------------------- |
+| --- | ---------------------------- | ---------------------------------- |
 | 0   | UEFI firmware               | Firmware update                   |
 | 4   | Bootloader                  | GRUB update                       |
 | 7   | Secure Boot state           | Secure Boot toggled, keys changed |
@@ -257,23 +257,23 @@ end
 | 11  | UKI (whole image)           | Any change to the UKI             |
 | 14  | shim's MOK certs and hashes | A MOK is enrolled or removed      |
 
-My first attempt was `--tpm2-pcrs=7+8+9+14`. PCRs 8 and 9 change with every kernel update, so the first `apt upgrade` that pulled in a new kernel left the machine waiting at a passphrase prompt. I settled on 0+7, which are stable across kernel updates.
+My first attempt was `--tpm2-pcrs=7+8+9+14`, which seemed thorough at the time. PCRs 8 and 9 change on every kernel update though, so the first `apt upgrade` that pulled in a new kernel left the machine sitting at a passphrase prompt - correct, but not what I wanted. I settled on 0+7, which stay put across kernel updates.
 
 ### What it does and doesn't protect against
 
-With the key sealed in the TPM, the drive is useless in another machine, whichever PCRs you choose. PCR 7 adds a check on how the machine boots: the TPM only releases the key if Secure Boot is on and its keys haven't changed, so booting with Secure Boot off or from a differently signed USB gets nothing. It doesn't cover `/boot`. Someone with physical access can still swap the unsigned initramfs while leaving Secure Boot on, which is why the firmware password matters. PCR 0 adds firmware tampering and motherboard swaps.
+With the key sealed in the TPM, the drive is useless in another machine, whichever PCRs you pick. PCR 7 adds a check on how the machine boots: the TPM only releases the key if Secure Boot is on and its keys haven't changed, so booting with Secure Boot off, or from a differently signed USB, gets you nothing. It doesn't cover `/boot`, though - someone with physical access can still swap the unsigned initramfs while leaving Secure Boot on, which is exactly why the firmware password matters. PCR 0 adds firmware tampering and motherboard swaps to the list of things that trip the seal.
 
-For a machine where the main worry is opportunistic theft, 0+7 with a firmware password and a passphrase fallback is enough for me.
+For a machine where the main worry is opportunistic theft rather than a targeted attack, 0+7 with a firmware password and a passphrase fallback is enough for me.
 
 ## Dead ends
 
 ### UKI, systemd-boot and PCR 11
 
-PCR 7 leaves one gap: it says nothing about the initramfs, so someone who can write to `/boot` can swap it while Secure Boot stays on. A Unified Kernel Image (UKI) closes it. It bundles the kernel, initramfs and command line into one signed binary, and PCR 11 measures the whole image, so the TPM only unseals for exactly that image. The cost is that every kernel update changes the UKI, so you have to re-enrol every time.
+PCR 7 leaves one gap: it says nothing about the initramfs, so someone who can write to `/boot` can swap it while Secure Boot stays on. A Unified Kernel Image (UKI) closes that gap by bundling the kernel, initramfs and command line into one signed binary, with PCR 11 measuring the whole thing, so the TPM only unseals for exactly that image. The cost is that every kernel update changes the UKI, so you re-enrol every time.
 
-I tried this, and it needs systemd-boot rather than GRUB. That's the awkward part on a machine installed with GRUB. Debian's systemd-boot and Secure Boot integration assumes GRUB isn't there. If the GRUB packages are installed, the postinst scripts notice and do nothing, with no error. I installed `shim-signed` and `systemd-boot-efi-amd64-signed`, saw no problems, and nothing had changed. Removing the GRUB packages wasn't enough either. I had to remove the files from the ESP (`/boot/efi/EFI/debian`) before the scripts did anything.
+I tried it anyway, and it needs systemd-boot rather than GRUB. That's the awkward part on a machine installed with GRUB. Debian's systemd-boot and Secure Boot integration assumes GRUB isn't there, and if the GRUB packages are still installed, the postinst scripts quietly notice and do nothing - no error, nothing. I installed `shim-signed` and `systemd-boot-efi-amd64-signed`, saw no complaints, and nothing had changed. Removing the GRUB packages wasn't enough either. I had to physically remove the files from the ESP (`/boot/efi/EFI/debian`) before the scripts would do anything at all.
 
-What I remember of the setup:
+What I remember of the setup, for whoever goes looking:
 
 ```bash
 apt purge grub-common grub2-common grub-efi-amd64 grub-efi-amd64-bin grub-efi-amd64-unsigned
@@ -290,13 +290,13 @@ initrd_generator=dracut
 uki_generator=ukify
 ```
 
-and `/etc/kernel/uki.conf` pointing `Cmdline=@/etc/kernel/cmdline` at your command line. Have a bootable USB before you purge GRUB.
+and `/etc/kernel/uki.conf` pointing `Cmdline=@/etc/kernel/cmdline` at your command line. Have a bootable USB ready before you purge GRUB.
 
-I went back to signed GRUB. Re-enrolling on every kernel update isn't worth it for a machine where the main worry is opportunistic theft, and I haven't kept this running, so I can't vouch for every step above.
+In the end I went back to signed GRUB. Re-enrolling on every kernel update isn't worth it for a machine where the main worry is opportunistic theft, and since I haven't kept this running, I can't vouch for every step above holding up on someone else's machine.
 
 ### Forgetting to re-enrol
 
-Every time I changed something in the boot chain I forgot to re-enrol, and every time the next boot stopped at a passphrase prompt. If you changed anything between the power button and the kernel, re-enrol.
+Every single time I changed something in the boot chain, I forgot to re-enrol, and every single time the next boot stopped dead at a passphrase prompt. Predictable, and yet it kept catching me out. If you changed anything between the power button and the kernel, re-enrol - consider it a reflex by now.
 
 ## Recovery
 
@@ -323,3 +323,5 @@ Reboot into the UEFI setup from a running system:
 ```bash
 systemctl reboot --firmware-setup
 ```
+
+I still haven't found a clean way to try the TPM first and only fall back to a passphrase prompt on failure - if you know one, I'd like to hear it.

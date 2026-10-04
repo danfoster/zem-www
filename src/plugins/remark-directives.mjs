@@ -1,6 +1,7 @@
 // Replaces the Hugo shortcodes this site used, via remark-directive syntax:
 //
 //   :::info / :::warning / :::note / :::tip   ...content...   :::
+//   :::gallery   ![a](a.png) ![b](b.png)   :::      (images side by side, click to enlarge)
 //   ::youtube{id=VIDEO_ID}
 //
 // Any directive we don't handle is turned back into its original text, since
@@ -19,6 +20,12 @@ export default function remarkDirectives() {
       if (node.type === 'containerDirective' && NOTICES.has(node.name)) {
         data.hName = 'div';
         data.hProperties = { class: `notice notice-${node.name}`, role: 'note' };
+        return;
+      }
+
+      if (node.type === 'containerDirective' && node.name === 'gallery') {
+        data.hName = 'div';
+        data.hProperties = { class: 'gallery' };
         return;
       }
 

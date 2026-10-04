@@ -143,6 +143,9 @@ a { color: inherit; }
 .post-header .meta { display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; align-items: baseline; margin-bottom: 1.1rem; font: 400 0.8rem/1.4 var(--mono); color: var(--muted); }
 .post-header h1 { margin: 0; font-size: clamp(2.1rem, 5.5vw, 3.4rem); font-weight: 700; line-height: 1.02; letter-spacing: -0.04em; text-wrap: balance; }
 .cover { max-width: var(--measure); margin: 0 0 2.25rem; }
+.gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0.75rem; margin: 1.5rem 0; }
+.gallery > p { display: contents; }
+.gallery img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
 .cover img { display: block; width: 100%; height: auto; border: 1px solid var(--ink); }
 
 .prose { max-width: var(--measure); }
